@@ -6277,7 +6277,7 @@ var $author$project$PhotoGroove$initialCmd = $elm$http$Http$get(
 			$elm$http$Http$expectJson,
 			$author$project$PhotoGroove$GotPhotos,
 			$elm$json$Json$Decode$list($author$project$PhotoGroove$photoDecoder)),
-		url: 'http://elm-in-action.com/photos/list.json'
+		url: 'https://elm-in-action.com/photos/list.json'
 	});
 var $author$project$PhotoGroove$Loading = {$: 'Loading'};
 var $author$project$PhotoGroove$Medium = {$: 'Medium'};
