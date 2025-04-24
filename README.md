@@ -29,24 +29,30 @@ cd Elm-Photo-Gallery
 elm make src/Main.elm --output=app.js
 ```
 
-🌐 Deployment
+### 🌐 Deployment
 This app is deployed using Vercel. To deploy your own version, push the project to a GitHub repo and import it on Vercel.
 
 
-⚠️ Note
+### ⚠️ Note
 Make sure all external assets use HTTPS:
+```html
 <!-- Use this -->
 <script src="https://elm-in-action.com/range-slider.js"></script>
 <link rel="stylesheet" href="https://elm-in-action.com/range-slider.css">
+```
 
-📁 Project Structure
+### 📁 Project Structure
+```bash
 Elm-Photo-Gallery/
 ├── src/            # Elm source code
 ├── app.js          # Compiled Elm output
 ├── index.html      # Entry HTML page
 ├── elm.json        # Elm project config
+```
 
 📄 License
 MIT License — feel free to use, modify, and distribute.
+```vbnet
 Let me know if you'd like this automatically added to your GitHub repo or adjusted to include author info.
+```
 
