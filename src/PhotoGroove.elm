@@ -1,5 +1,15 @@
 port module PhotoGroove exposing (..)
 
+{-| ==========================================================
+   PHOTO GROOVE - FULLY COMMENTED VERSION
+   ----------------------------------------------------------
+   This is a detailed educational version of the file.
+   Every important section is explained with comments.
+   ==========================================================
+-}
+
+-- IMPORTS ---------------------------------------------------
+
 import Array exposing (Array)
 import Browser
 import Html exposing (..)
@@ -12,23 +22,38 @@ import Json.Encode as Encode
 import Random
 
 
+-- CONSTANTS -------------------------------------------------
+
+-- Base URL for loading images
 urlPrefix : String
 urlPrefix =
     "http://elm-in-action.com/"
 
 
+-- MESSAGES --------------------------------------------------
+
+{-| Msg represents every possible event in the app.
+    In Elm, NOTHING happens unless it is represented
+    as a message handled in `update`.
+-}
+
 type Msg
-    = ClickedPhoto String
-    | ClickedSize ThumbnailSize
-    | ClickedSurpriseMe
-    | GotRandomPhoto Photo
-    | GotActivity String
-    | GotPhotos (Result Http.Error (List Photo))
-    | SlidHue Int
-    | SlidRipple Int
-    | SlidNoise Int
+    = ClickedPhoto String              -- User clicked a thumbnail
+    | ClickedSize ThumbnailSize        -- User selected thumbnail size
+    | ClickedSurpriseMe                -- User clicked random button
+    | GotRandomPhoto Photo             -- Random generator produced a photo
+    | GotActivity String               -- JS sent activity info through port
+    | GotPhotos (Result Http.Error (List Photo)) -- HTTP response received
+    | SlidHue Int                      -- Hue slider changed
+    | SlidRipple Int                   -- Ripple slider changed
+    | SlidNoise Int                    -- Noise slider changed
 
 
+-- VIEW ------------------------------------------------------
+
+{-| Main view function.
+    Renders different UI depending on current status.
+-}
 view : Model -> Html Msg
 view model =
     div [ class "content" ] <|
@@ -43,20 +68,29 @@ view model =
                 [ text ("Error: " ++ errorMessage) ]
 
 
+-- FILTER SLIDER VIEW ---------------------------------------
+
+{-| Creates a single slider (Hue / Ripple / Noise).
+    toMsg converts slider value into a message.
+-}
 viewFilter : (Int -> Msg) -> String -> Int -> Html Msg
 viewFilter toMsg name magnitude =
     div [ class "filter-slider" ]
         [ label [] [ text name ]
         , rangeSlider
-            [ Attr.max "11"
+            [ Attr.max "11"                          -- Maximum slider value
             , Attr.property "val" (Encode.int magnitude)
-            , onSlide toMsg
+            , onSlide toMsg                           -- Custom slide event
             ]
             []
         , label [] [ text (String.fromInt magnitude) ]
         ]
 
 
+-- LOADED VIEW ----------------------------------------------
+
+{-| Renders full UI when photos are loaded.
+-}
 viewLoaded : List Photo -> String -> Model -> List (Html Msg)
 viewLoaded photos selectedUrl model =
     [ h1 [] [ text "Photo Groove" ]
@@ -76,6 +110,11 @@ viewLoaded photos selectedUrl model =
     ]
 
 
+-- THUMBNAIL VIEW -------------------------------------------
+
+{-| Renders one thumbnail image.
+    Adds "selected" class if currently chosen.
+-}
 viewThumbnail : String -> Photo -> Html Msg
 viewThumbnail selectedUrl thumb =
     img
@@ -86,6 +125,8 @@ viewThumbnail selectedUrl thumb =
         ]
         []
 
+
+-- SIZE SELECTOR --------------------------------------------
 
 viewSizeChooser : ThumbnailSize -> Html Msg
 viewSizeChooser size =
@@ -108,11 +149,20 @@ sizeToString size =
             "large"
 
 
+-- PORTS -----------------------------------------------------
+
+{-| Sends filter options to JavaScript.
+    JS will apply filters to canvas.
+-}
 port setFilters : FilterOptions -> Cmd msg
 
 
+{-| Receives activity changes from JavaScript.
+-}
 port activityChanges : (String -> msg) -> Sub msg
 
+
+-- DATA TYPES ------------------------------------------------
 
 type alias FilterOptions =
     { url : String
@@ -127,6 +177,10 @@ type alias Photo =
     }
 
 
+-- JSON DECODER ----------------------------------------------
+
+{-| Converts JSON into Photo type safely.
+-}
 photoDecoder : Decoder Photo
 photoDecoder =
     succeed Photo
@@ -135,11 +189,15 @@ photoDecoder =
         |> optional "title" string "(untitled)"
 
 
+-- STATUS ----------------------------------------------------
+
 type Status
     = Loading
     | Loaded (List Photo) String
     | Errored String
 
+
+-- MODEL -----------------------------------------------------
 
 type alias Model =
     { status : Status
@@ -168,6 +226,11 @@ type ThumbnailSize
     | Large
 
 
+-- UPDATE ----------------------------------------------------
+
+{-| Central state machine of the app.
+    Every message is handled here.
+-}
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -190,13 +253,7 @@ update msg model =
                         |> Random.generate GotRandomPhoto
                         |> Tuple.pair model
 
-                Loaded [] _ ->
-                    ( model, Cmd.none )
-
-                Loading ->
-                    ( model, Cmd.none )
-
-                Errored errorMessage ->
+                _ ->
                     ( model, Cmd.none )
 
         GotPhotos (Ok photos) ->
@@ -204,19 +261,13 @@ update msg model =
                 first :: rest ->
                     applyFilters
                         { model
-                            | status =
-                                case List.head photos of
-                                    Just photo ->
-                                        Loaded photos photo.url
-
-                                    Nothing ->
-                                        Loaded [] ""
+                            | status = Loaded photos first.url
                         }
 
                 [] ->
                     ( { model | status = Errored "0 photos found" }, Cmd.none )
 
-        GotPhotos (Err httpError) ->
+        GotPhotos (Err _) ->
             ( { model | status = Errored "Server error!" }, Cmd.none )
 
         SlidHue hue ->
@@ -228,6 +279,8 @@ update msg model =
         SlidNoise noise ->
             applyFilters { model | noise = noise }
 
+
+-- APPLY FILTERS ---------------------------------------------
 
 applyFilters : Model -> ( Model, Cmd Msg )
 applyFilters model =
@@ -245,12 +298,11 @@ applyFilters model =
             in
             ( model, setFilters { url = url, filters = filters } )
 
-        Loading ->
+        _ ->
             ( model, Cmd.none )
 
-        Errored errorMessage ->
-            ( model, Cmd.none )
 
+-- HELPERS ---------------------------------------------------
 
 selectUrl : String -> Status -> Status
 selectUrl url status =
@@ -258,12 +310,11 @@ selectUrl url status =
         Loaded photos _ ->
             Loaded photos url
 
-        Loading ->
+        _ ->
             status
 
-        Errored errorMessage ->
-            status
 
+-- INITIAL COMMAND -------------------------------------------
 
 initialCmd : Cmd Msg
 initialCmd =
@@ -272,6 +323,8 @@ initialCmd =
         , expect = Http.expectJson GotPhotos (list photoDecoder)
         }
 
+
+-- MAIN ------------------------------------------------------
 
 main : Program () Model Msg
 main =
@@ -283,15 +336,21 @@ main =
         }
 
 
+-- SUBSCRIPTIONS ---------------------------------------------
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     activityChanges GotActivity
 
 
+-- CUSTOM RANGE SLIDER NODE ---------------------------------
+
 rangeSlider : List (Attribute msg) -> List (Html msg) -> Html msg
 rangeSlider attributes children =
     node "range-slider" attributes children
 
+
+-- CUSTOM SLIDE EVENT DECODER --------------------------------
 
 onSlide : (Int -> msg) -> Attribute msg
 onSlide toMsg =
